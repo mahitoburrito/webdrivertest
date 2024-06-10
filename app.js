@@ -11,9 +11,30 @@ const {onCLS, onFCP, onLCP} = require('web-vitals');
     try {
         options = await new Options().addExtensions("/Users/mahitnamburu/Desktop/webdrivertest/webextensions-selenium-example.crx")
         driver = await new Builder().forBrowser(Browser.CHROME).setChromeOptions(options).build();
-        await driver.get('https://www.example.com/');
-        await driver.executeScript('const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry);return currEntry});observer.observe({entryTypes: ["largest-contentful-paint", "layout-shift"]});console.log("script ran");');
-        await driver.executeScript('console.log(5);');
+        await driver.get('https://www.google.com/');
+        //let currObject = await driver.executeScript('const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry);return currEntry});observer.observe({type: "largest-contentful-paint", buffered: true});console.log("script ran");');
+        let currObject1 = await driver.executeScript(() => {const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry); return currEntry.duration;});observer.observe({type: "largest-contentful-paint", buffered: true});console.log("script ran");});
+        let currObject2 = await driver.executeScript(() => {const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry); return currEntry;});observer.observe({type: "layout-shift", buffered: true});console.log("script ran"); return 11;});
+        /* let currObject3 = driver.executeAsyncScript(() => {const observer = new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+                if (!entry.hadRecentInput) {
+                    console.log("LayoutShift value:", entry.value);
+                    console.log(entry);
+                    if (entry.sources) {
+                        for (const {node, currentRect, previousRect} of entry.sources)
+                            console.log("LayoutShift source:", node, {
+                                currentRect,
+                                previousRect,
+                              });
+                    }
+                }
+            }
+        });observer.observe({type: "layout-shift", buffered: true});console.log("script ran"); return 11;});
+ */
+        //never receiving the currObject and is timing out, not exactly, got to look at what the conditions for it is
+        //await driver.executeScript(() => {console.log(5)});
+        //await currObject1.then((message) => {console.log(message)}).catch()
+        await console.log(currObject2);
     }
     catch (e) {
         console.log(e)
