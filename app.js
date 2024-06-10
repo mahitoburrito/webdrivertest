@@ -13,7 +13,7 @@ const {onCLS, onFCP, onLCP} = require('web-vitals');
         driver = await new Builder().forBrowser(Browser.CHROME).setChromeOptions(options).build();
         await driver.get('https://www.google.com/');
         //let currObject = await driver.executeScript('const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry);return currEntry});observer.observe({type: "largest-contentful-paint", buffered: true});console.log("script ran");');
-        let currObject1 = await driver.executeScript(() => {const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry); return currEntry.duration;});observer.observe({type: "largest-contentful-paint", buffered: true});console.log("script ran");});
+        let currObject1 = await driver.executeAsyncScript((done) => {const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry); return currEntry.duration; done()});observer.observe({type: "largest-contentful-paint", buffered: true});console.log("script ran");});
         let currObject2 = await driver.executeScript(() => {const observer = new PerformanceObserver((list) => {let perfEntries = list.getEntries();let currEntry = perfEntries[perfEntries.length - 1];console.log(currEntry); return currEntry;});observer.observe({type: "layout-shift", buffered: true});console.log("script ran"); return 11;});
         /* let currObject3 = driver.executeAsyncScript(() => {const observer = new PerformanceObserver((list) => {
             for (const entry of list.getEntries()) {
