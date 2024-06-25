@@ -2,6 +2,7 @@
   "type": "module",
   "dependencies": {
     "mocha": "^10.4.0",
+    "path": "^0.12.7",
     "puppeteer": "^22.11.0",
     "puppeteer-core": "^22.11.0",
     "selenium-webdriver": "^4.21.0",

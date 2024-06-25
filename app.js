@@ -6,7 +6,7 @@ const {onCLS, onFCP, onLCP} = require('web-vitals');
 
 const URL = 'https://www.google.com/';
 const EXTENSIONS = ["/Users/mahitnamburu/Desktop/webdrivertest/webextensions-selenium-example.crx"];
-async function generalTest() {
+/* async function generalTest(driver, extensionList, options, arguments=null) {
     try {
 
     }
@@ -17,7 +17,7 @@ async function generalTest() {
 
     }
 }
-
+ */
 (async function initalTest() {
     let driver;
     let options;
@@ -34,12 +34,19 @@ async function generalTest() {
         await driver.get(URL);
         let currObject1 = await driver.executeAsyncScript((done) => {
             //check for if observer has already been instatiated
+            var CLS = 0;
             const observer = new PerformanceObserver((list) => {
                 let perfEntries = list.getEntries();
+                perfEntries.forEach((entry) => {
+                    if (!entry.hadRecentInput) {
+                        CLS += entry.value;
+                    }
+                });
                 let currEntry = perfEntries[perfEntries.length - 1];
-                console.log(currEntry); 
+                console.log(currEntry);
+                console.log(CLS)
                 //return currEntry.duration; 
-                done(currEntry);
+                done(CLS);
             });
             observer.observe({type: "largest-contentful-paint", buffered: true});
             console.log("script ran for LCP");
