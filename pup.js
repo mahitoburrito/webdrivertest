@@ -1,11 +1,44 @@
 import puppeteer from 'puppeteer';
 //const {puppeteer} = require('puppeteer');
 import path from 'path';
+import pidusage from 'pidusage';
+import os from 'os';
+import WebSocket from 'ws';
 
-let URL = "https://www.google.com";
+let URL = "https://www.example.com";
 let CLS = 0;
 let LCP = 0;
 let TBT = 0;
+const pid = process.pid
+
+function SEND(ws, command) {
+    ws.send(JSON.stringify(command));
+    return new Promise(resolve => {
+      ws.on('message', function(text) {
+        const response = JSON.parse(text);
+        if (response.id === command.id) {
+          //ws.removeListener('message', arguments.callee);
+          resolve(response);
+        }
+      });
+    });
+  }
+
+async function trackResources(pid) {
+    try {
+        const statistics = await pidusage(pid);
+        console.log(statistics.cpu);
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
+setInterval(() => {
+    trackResources(pid);
+}, 500)
+
+
 //let pathToExtension = "/Users/mahitnamburu/Desktop/webdrivertest/webextensions-selenium-example.crx"
 let pathToExtension = path.join(process.cwd(), 'webextensions-selenium-example');
 const browserExtension = await puppeteer.launch({
@@ -22,6 +55,46 @@ const browserNormal = await puppeteer.launch({
     headless: false
 });
 
+//setting up websocket connection
+const wsNormal = new WebSocket(browserNormal.wsEndpoint(), {perMessageDeflate: false});
+await new Promise(resolve => wsNormal.once('open', resolve));
+
+console.log('Sending Target.setDiscoverTargets');
+const targetList = await SEND(wsNormal, {
+  id: 1,
+  method: 'Target.getTargets',
+});
+await console.log(targetList.result.targetInfos[0]);
+const targetDetails = await SEND(wsNormal, {
+  id: 2,
+  method: 'Target.attachToTarget',
+  params: {
+    targetId: targetList.result.targetInfos[0].targetId, 
+    flatten: true
+  }
+});
+const sessionID = await targetDetails.result.sessionId;
+await console.log(sessionID);
+await SEND(wsNormal, {
+  sessionId: sessionID,
+  id: 1, // Note that IDs are independent between sessions.
+  method: 'Page.navigate',
+  params: {
+    url: 'https://pptr.dev',
+  },
+});
+await SEND(wsNormal, {
+  sessionId: sessionID,
+  id: 2, // Note that IDs are independent between sessions.
+  method: 'Performance.enable',
+});
+const perfResults = (await SEND(wsNormal, {
+  sessionId: sessionID,
+  id: 2, // Note that IDs are independent between sessions.
+  method: 'Performance.getMetrics',
+})).result;
+console.log(perfResults);
+
 const page = await browserExtension.newPage();
 const pageNormal = await browserNormal.newPage();
 
@@ -30,6 +103,7 @@ await page.goto(URL);
 async function coreWebVitalsTest(page) {
 
 await page.exposeFunction('print', (msg) => console.log(msg));
+// do something with these expose functions such that if after all 3 have been updated, the timeout moves on, but defaults to 2 seconds otherwise
 await page.exposeFunction('updateCLS', (metric) => {CLS = metric;console.log("updated value cls^");});
 await page.exposeFunction('updateLCP', (metric) => {LCP = metric;console.log("updated value lcp^");});
 await page.exposeFunction('updateTBT', (metric) => {TBT = metric;console.log("updated value tbt^");});
@@ -104,4 +178,7 @@ main task now, is to figure out how to isolate the running of the extension scri
 then carefully track the cpu consumption and memory consumption, and analyze which code blocks specifically are giving us the most trouble
 this tool can be carefully adjusted to test the extension on the specific websites and pages that the extension developer wants (accounts for the varying degree of performance issues based on what website they are testing)
 potentially start contributing to devtools in this aspect
+standalone CLI tool to take a folder and gives back test results (w/ w/o extension)
+figure out the async and sync layers
+make a simple line graph for the cpu and memory consumption
 */
