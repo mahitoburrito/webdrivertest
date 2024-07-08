@@ -1,3 +1,6 @@
+#!/usr/bin/env node
+
+import { program } from "commander";
 import puppeteer from 'puppeteer';
 //const {puppeteer} = require('puppeteer');
 import path from 'path';
@@ -5,13 +8,23 @@ import path from 'path';
 //import os from 'os';
 import WebSocket from 'ws';
 
+let pathToExtension;
 let URL = "https://www.google.com";
 let CLS = 0;
 let LCP = 0;
 let TBT = 0;
-let pathToExtension = path.join(process.cwd(), 'webextensions-selenium-example');
+//let pathToExtension = path.join(process.cwd(), 'webextensions-selenium-example');
 
-//const pid = process.pid
+program
+  .version("1.0.0")
+  .description("CLI for Chrome Extension development testing.")
+  .option("-e, --extension <type>", "Add your extension filepath")
+  .action((options) => {
+    console.log(`Extension Filepath: '${options.extension}'`);
+    pathToExtension = options.extension;
+  });
+
+program.parse(process.argv);
 
 function SEND(ws, command) {
     ws.send(JSON.stringify(command));
@@ -183,15 +196,3 @@ await new Promise((resolve, reject) => setTimeout(resolve, 2000));
 await console.log(TBT);
 await console.log(CLS);
 await console.log(LCP);
-
-/* brainstorming
-main task now, is to figure out how to isolate the running of the extension script
-then carefully track the cpu consumption and memory consumption, and analyze which code blocks specifically are giving us the most trouble
-this tool can be carefully adjusted to test the extension on the specific websites and pages that the extension developer wants (accounts for the varying degree of performance issues based on what website they are testing)
-potentially start contributing to devtools in this aspect
-standalone CLI tool to take a folder and gives back test results (w/ w/o extension)
-figure out the async and sync layers
-make a simple line graph for the cpu and memory consumption
-*/
-
-console.log(pathToExtension);

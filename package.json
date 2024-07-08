@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "commander": "^12.1.0",
     "mocha": "^10.4.0",
     "os": "^0.1.2",
     "path": "^0.12.7",
@@ -33,7 +34,6 @@
   },
   "homepage": "https://github.com/mahitoburrito/webdrivertest#readme",
   "bin": {
-    "tran": "bin/index.js"
-  },
-  "devDependencies": {}
+    "perf": "./bin/index.js"
+  }
 }

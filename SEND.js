@@ -1,6 +1,12 @@
 // Send a command over the WebSocket and return a promise
 // that resolves with the command response.
-module.exports = function SEND(ws, command) {
+module.exports = {
+    SEND: function() {
+        console.log("hello");
+    }
+}
+
+function SEND(ws, command) {
     ws.send(JSON.stringify(command));
     return new Promise(resolve => {
       ws.on('message', function(text) {
