@@ -6,6 +6,7 @@
     "os": "^0.1.2",
     "path": "^0.12.7",
     "pidusage": "^3.0.2",
+    "plotly.js-dist": "^2.33.0",
     "puppeteer": "^22.11.0",
     "puppeteer-core": "^22.11.0",
     "selenium-webdriver": "^4.21.0",

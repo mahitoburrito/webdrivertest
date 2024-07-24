@@ -3,83 +3,33 @@ import puppeteer from 'puppeteer';
 import path from 'path';
 //import pidusage from 'pidusage';
 //import os from 'os';
-import WebSocket from 'ws';
+//import WebSocket from 'ws';
+//import SEND from './SEND.js';
+//import Plotly from 'plotly.js-dist-min'
+import requestCLSMetrics from './cls.js';
+import requestINPMetrics from './inp.js';
+import requestTBTMetrics from './tbt.js';
+import requestLCPMetrics from './lcp.js';
+import wsConnection from './socket.js';
 
 let URL = "https://www.google.com";
 let CLS = 0;
 let LCP = 0;
 let TBT = 0;
+let INP = -1;
 let pathToExtension = path.join(process.cwd(), 'webextensions-selenium-example');
+const normalMetricsDict = Object();
+const extensionMetricsDict = Object();
 
-//const pid = process.pid
-
-function SEND(ws, command) {
-    ws.send(JSON.stringify(command));
-    return new Promise(resolve => {
-      ws.on('message', function(text) {
-        const response = JSON.parse(text);
-        if (response.id === command.id) {
-          //ws.removeListener('message', arguments.callee);
-          resolve(response);
-        }
-      });
-    });
-  }
-
-async function wsConnection(browser) {
-    const wsNormal = new WebSocket(browser.wsEndpoint(), {perMessageDeflate: false});
-    await new Promise(resolve => wsNormal.once('open', resolve));
-    console.log('Acquiring targets...');
-    const targetList = await SEND(wsNormal, {
-    id: 1,
-    method: 'Target.getTargets',
-    });
-    // Ensure we are grabbing the right page here
-    await console.log('Attaching to page targets...');
-    const targetDetails = await SEND(wsNormal, {
-    id: 2,
-    method: 'Target.attachToTarget',
-    params: {
-        targetId: targetList.result.targetInfos[0].targetId, 
-        flatten: true
-    }
-    });
-
-    // Grab session ID
-    const sessionID = await targetDetails.result.sessionId;
-    await SEND(wsNormal, {
-    sessionId: sessionID,
-    id: 1, 
-    method: 'Page.navigate',
-    params: {
-        url: URL,
-    },
-    });
-    
-    await SEND(wsNormal, {
-    sessionId: sessionID,
-    id: 2, 
-    method: 'Performance.enable',
-    });
-    
-    const perfResults = (await SEND(wsNormal, {
-    sessionId: sessionID,
-    id: 3,
-    method: 'Performance.getMetrics',
-    })).result;
-    console.log('Performance metrics using DevTools Protocol');
-    console.log(perfResults);
-}
-
-async function coreWebVitalsTest(page) {
+async function coreWebVitalsTest(page, dict) {
 
     await page.exposeFunction('print', (msg) => console.log(msg));
-    // do something with these expose functions such that if after all 3 have been updated, the timeout moves on, but defaults to 2 seconds otherwise
-    await page.exposeFunction('updateCLS', (metric) => {CLS = metric;console.log("updated value cls^");});
-    await page.exposeFunction('updateLCP', (metric) => {LCP = metric;console.log("updated value lcp^");});
-    await page.exposeFunction('updateTBT', (metric) => {TBT = metric;console.log("updated value tbt^");});
-        
-    await page.evaluate(() => {
+    
+    await requestCLSMetrics(page, dict);
+    await requestINPMetrics(page, dict);
+    await requestLCPMetrics(page, dict);
+    await requestTBTMetrics(page, dict);
+    /* await page.evaluate(() => {
         //check for if observer has already been instatiated
         
         const observer = new PerformanceObserver((list) => {
@@ -99,7 +49,8 @@ async function coreWebVitalsTest(page) {
         observer.observe({type: "layout-shift", buffered: true});
         //print("script ran for CLS");
     });
-    await page.evaluate(() => {
+    */ 
+    /* await page.evaluate(() => {
         const observer = new PerformanceObserver((list) => {
             var tbt = 0;
             let perfEntries = list.getEntries();
@@ -125,6 +76,24 @@ async function coreWebVitalsTest(page) {
         observer.observe({type: "largest-contentful-paint", buffered: true});
         //print("script ran for NEW LCP");
     });
+
+    await page.evaluate(() => {
+        const observer = new PerformanceObserver((list) => {
+            var inp = -1;
+            console.log(list);
+            list.getEntries().forEach((entry) => {
+                if (!entry.interactionId) {
+                    return;
+                }
+                if (entry.duration > inp) {
+                    console.log(inp);
+                    console.log('INP UPDATED');
+                    updateINP(inp);
+                }
+            })
+        });
+        observer.observe({type: "event", buffered: true, durationThreshold: 0});
+    }); */
 }
 
 /* async function trackResources(pid) {
@@ -170,20 +139,28 @@ await page.goto(URL);
 await pageNormal.goto(URL);
 
 
-await coreWebVitalsTest(page);
+await coreWebVitalsTest(page, extensionMetricsDict);
 //replace this part with more of a streaming value (ie. when the value gets changed, we are updated)
-await new Promise((resolve, reject) => setTimeout(resolve, 2000));
-await console.log(TBT);
-await console.log(CLS);
-await console.log(LCP);
+await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+await console.log(extensionMetricsDict.tbt);
+await console.log(extensionMetricsDict.cls);
+await console.log(extensionMetricsDict.lcp);
+await console.log(extensionMetricsDict.inp);
 await console.log("------------");
 //await page.close();
-await coreWebVitalsTest(pageNormal);
-await new Promise((resolve, reject) => setTimeout(resolve, 2000));
-await console.log(TBT);
-await console.log(CLS);
-await console.log(LCP);
+await coreWebVitalsTest(pageNormal, normalMetricsDict);
+await new Promise((resolve, reject) => setTimeout(resolve, 5000));
+await console.log(normalMetricsDict.tbt);
+await console.log(normalMetricsDict.cls);
+await console.log(normalMetricsDict.lcp);
+await console.log(normalMetricsDict.inp);
 
+
+
+
+
+//await page.close()
+//await pageNormal.close()
 /* brainstorming
 main task now, is to figure out how to isolate the running of the extension script
 then carefully track the cpu consumption and memory consumption, and analyze which code blocks specifically are giving us the most trouble
@@ -192,6 +169,9 @@ potentially start contributing to devtools in this aspect
 standalone CLI tool to take a folder and gives back test results (w/ w/o extension)
 figure out the async and sync layers
 make a simple line graph for the cpu and memory consumption
+better formatting for the data
+diff functions for cli/flags
+
 */
 
-console.log(pathToExtension);
+// console.log(pathToExtension);

@@ -14,17 +14,29 @@ let CLS = 0;
 let LCP = 0;
 let TBT = 0;
 //let pathToExtension = path.join(process.cwd(), 'webextensions-selenium-example');
-
+//allow users to flag what metrics they want tracked
+//allow users to enter the extension path, and url they want tested
 program
   .version("1.0.0")
   .description("CLI for Chrome Extension development testing.")
+  .option("-u, --url <type>", "add your testing URL")
   .option("-e, --extension <type>", "Add your extension filepath")
+  .option("-l, --no-lcp, ", "Deactivate LCP Metric")
+  .option("-c, --no-cls", "Deactivate CLS Metric")
+  .option("-i, --no-inp", "Deactivate INP Metric")
+  .option("-t, --no-tbt", "Deactivate TBT Metric")
+  .option("-r, --no-resources", "Deactivate resource tracking")
   .action((options) => {
     console.log(`Extension Filepath: '${options.extension}'`);
     pathToExtension = options.extension;
   });
 
 program.parse(process.argv);
+
+options = program.opts()
+console.log("here");
+console.log(options.extension);
+console.log(options.lcp)
 
 function SEND(ws, command) {
     ws.send(JSON.stringify(command));

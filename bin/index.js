@@ -7,6 +7,7 @@ import path from 'path';
 //import pidusage from 'pidusage';
 //import os from 'os';
 import WebSocket from 'ws';
+import SEND from "../SEND.js";
 
 let pathToExtension;
 let URL = "https://www.google.com";
@@ -17,26 +18,28 @@ let TBT = 0;
 program
   .version("1.0.0")
   .description("CLI for chromeextension development")
+  .option("-u, --url <type>", "add your testing URL")
   .option("-e, --extension <type>", "Add your name")
+  .option("-l, --no-lcp, ", "Deactivate LCP Metric")
+  .option("-c, --no-cls", "Deactivate CLS Metric")
+  .option("-i, --no-inp", "Deactivate INP Metric")
+  .option("-t, --no-tbt", "Deactivate TBT Metric")
+  .option("-r, --no-resources", "Deactivate resource tracking")
   .action((options) => {
-    console.log(`Extension Filepath: '${options.extension}'`);
     pathToExtension = options.extension;
   });
 
 program.parse(process.argv);
 
-function SEND(ws, command) {
-  ws.send(JSON.stringify(command));
-  return new Promise(resolve => {
-    ws.on('message', function(text) {
-      const response = JSON.parse(text);
-      if (response.id === command.id) {
-        //ws.removeListener('message', arguments.callee);
-        resolve(response);
-      }
-    });
-  });
-}
+const options = program.opts();
+console.log(`Extension Filepath: ${options.extension}`);
+console.log(`Testing URL: ${options.url}`);
+console.log(`Tracking Resources: ${options.resources}`);
+console.log(`Tracking CLS: ${options.cls}`);
+console.log(`Tracking LCP: ${options.lcp}`);
+console.log(`Tracking TBT: ${options.tbt}`);
+console.log(`Tracking INP: ${options.inp}`);
+
 
 async function wsConnection(browser) {
   const wsNormal = new WebSocket(browser.wsEndpoint(), {perMessageDeflate: false});
@@ -196,3 +199,7 @@ await console.log(TBT);
 await console.log(CLS);
 await console.log(LCP);
 
+// a way to save the output file, test flag, a flag for output, 
+// when to close page
+// find extension that injects an input box
+// set up a git ignore file
