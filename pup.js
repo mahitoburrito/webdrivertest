@@ -1,25 +1,30 @@
 import puppeteer from 'puppeteer';
-//const {puppeteer} = require('puppeteer');
 import path from 'path';
-//import pidusage from 'pidusage';
-//import os from 'os';
-//import WebSocket from 'ws';
-//import SEND from './SEND.js';
-//import Plotly from 'plotly.js-dist-min'
 import requestCLSMetrics from './cls.js';
 import requestINPMetrics from './inp.js';
 import requestTBTMetrics from './tbt.js';
 import requestLCPMetrics from './lcp.js';
 import wsConnection from './socket.js';
+//import pidusage from 'pidusage';
+//import os from 'os';
+//import WebSocket from 'ws';
+//import SEND from './SEND.js';
+//import Plotly from 'plotly.js-dist-min'
 
 let URL = "https://www.google.com";
-let CLS = 0;
-let LCP = 0;
-let TBT = 0;
-let INP = -1;
+
 let pathToExtension = path.join(process.cwd(), 'webextensions-selenium-example');
 const normalMetricsDict = Object();
+normalMetricsDict.cls = 0
+normalMetricsDict.lcp = 0
+normalMetricsDict.inp = -1
+normalMetricsDict.tbt = 0
+
 const extensionMetricsDict = Object();
+extensionMetricsDict.cls = 0
+extensionMetricsDict.lcp = 0
+extensionMetricsDict.inp = -1
+extensionMetricsDict.tbt = 0
 
 async function coreWebVitalsTest(page, dict) {
 
@@ -29,89 +34,7 @@ async function coreWebVitalsTest(page, dict) {
     await requestINPMetrics(page, dict);
     await requestLCPMetrics(page, dict);
     await requestTBTMetrics(page, dict);
-    /* await page.evaluate(() => {
-        //check for if observer has already been instatiated
-        
-        const observer = new PerformanceObserver((list) => {
-            var cls = 0;
-            let perfEntries = list.getEntries();
-            perfEntries.forEach((entry) => {
-                if (!entry.hadRecentInput) {
-                    cls += entry.value;
-                }
-            });
-            //let currEntry = perfEntries[perfEntries.length - 1];
-            //print(currEntry);
-            //console.log(cls) 
-            //print(cls);
-            updateCLS(cls);
-        });
-        observer.observe({type: "layout-shift", buffered: true});
-        //print("script ran for CLS");
-    });
-    */ 
-    /* await page.evaluate(() => {
-        const observer = new PerformanceObserver((list) => {
-            var tbt = 0;
-            let perfEntries = list.getEntries();
-            perfEntries.forEach((entry) => {
-                tbt += entry.duration - 50;
-            });
-            //print(tbt);
-            updateTBT(tbt);
-        });
-        observer.observe({type: "longtask", buffered: true});
-        //print("script ran for total blocking time");
-    });
-    await console.log("after TBT");
-
-    await page.evaluate(() => {
-        const observer = new PerformanceObserver((list) => {
-            let perfEntries = list.getEntries();
-            let currEntry = perfEntries[perfEntries.length - 1];
-            console.log(currEntry);
-            //print(currEntry.startTime);
-            updateLCP(currEntry.startTime);
-        });
-        observer.observe({type: "largest-contentful-paint", buffered: true});
-        //print("script ran for NEW LCP");
-    });
-
-    await page.evaluate(() => {
-        const observer = new PerformanceObserver((list) => {
-            var inp = -1;
-            console.log(list);
-            list.getEntries().forEach((entry) => {
-                if (!entry.interactionId) {
-                    return;
-                }
-                if (entry.duration > inp) {
-                    console.log(inp);
-                    console.log('INP UPDATED');
-                    updateINP(inp);
-                }
-            })
-        });
-        observer.observe({type: "event", buffered: true, durationThreshold: 0});
-    }); */
 }
-
-/* async function trackResources(pid) {
-    try {
-        const statistics = await pidusage(pid);
-        console.log(statistics.cpu);
-    }
-    catch (e) {
-        console.log(e);
-    }
-}
-
-setInterval(() => {
-    trackResources(pid);
-}, 500) */
-
-
-//let pathToExtension = "/Users/mahitnamburu/Desktop/webdrivertest/webextensions-selenium-example.crx"
 
 // Set up browsers with and without extension
 const browserExtension = await puppeteer.launch({

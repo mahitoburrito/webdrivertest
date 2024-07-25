@@ -1,6 +1,11 @@
 async function requestINPMetrics(page, dict) {
     var INP = 0;
-    await page.exposeFunction('updateINP', (metric) => {INP = metric;console.log("updated value inp^");dict.inp=metric});
+    await page.exposeFunction('updateINP', (metric) => {
+        INP = metric;
+        console.log("updated value inp^");
+        dict.inp=metric
+    });
+    
     await page.evaluate(() => {
         const observer = new PerformanceObserver((list) => {
             var inp = -1;

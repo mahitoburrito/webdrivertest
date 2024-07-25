@@ -2,7 +2,13 @@ async function requestCLSMetrics(page, dict) {
     var CLS = 0;
     var defaultCLS = CLS;
     var updateComplete = false;
-    await page.exposeFunction('updateCLS', (metric) => {CLS = metric;console.log("updated value cls^");console.log(CLS); updateComplete=true; dict.cls=metric;});
+    
+    await page.exposeFunction('updateCLS', (metric) => {
+        CLS = metric;
+        console.log("updated value cls^");
+        updateComplete=true;
+        dict.cls=metric;
+    });
     
     await page.evaluate(() => {
         //check for if observer has already been instatiated

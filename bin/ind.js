@@ -7,163 +7,153 @@ import path from 'path';
 //import pidusage from 'pidusage';
 //import os from 'os';
 import WebSocket from 'ws';
+import SEND from "../SEND.js";
 
 let pathToExtension;
 let URL = "https://www.google.com";
 let CLS = 0;
 let LCP = 0;
 let TBT = 0;
-//let pathToExtension = path.join(process.cwd(), 'webextensions-selenium-example');
-//allow users to flag what metrics they want tracked
-//allow users to enter the extension path, and url they want tested
+
 program
   .version("1.0.0")
-  .description("CLI for Chrome Extension development testing.")
+  .description("CLI for chromeextension development")
   .option("-u, --url <type>", "add your testing URL")
-  .option("-e, --extension <type>", "Add your extension filepath")
+  .option("-e, --extension <type>", "Add your name")
   .option("-l, --no-lcp, ", "Deactivate LCP Metric")
   .option("-c, --no-cls", "Deactivate CLS Metric")
   .option("-i, --no-inp", "Deactivate INP Metric")
   .option("-t, --no-tbt", "Deactivate TBT Metric")
   .option("-r, --no-resources", "Deactivate resource tracking")
   .action((options) => {
-    console.log(`Extension Filepath: '${options.extension}'`);
     pathToExtension = options.extension;
   });
 
 program.parse(process.argv);
 
-options = program.opts()
-console.log("here");
-console.log(options.extension);
-console.log(options.lcp)
+const options = program.opts();
+console.log(`Extension Filepath: ${options.extension}`);
+console.log(`Testing URL: ${options.url}`);
+console.log(`Tracking Resources: ${options.resources}`);
+console.log(`Tracking CLS: ${options.cls}`);
+console.log(`Tracking LCP: ${options.lcp}`);
+console.log(`Tracking TBT: ${options.tbt}`);
+console.log(`Tracking INP: ${options.inp}`);
 
-function SEND(ws, command) {
-    ws.send(JSON.stringify(command));
-    return new Promise(resolve => {
-      ws.on('message', function(text) {
-        const response = JSON.parse(text);
-        if (response.id === command.id) {
-          //ws.removeListener('message', arguments.callee);
-          resolve(response);
-        }
-      });
-    });
-  }
 
 async function wsConnection(browser) {
-    const wsNormal = new WebSocket(browser.wsEndpoint(), {perMessageDeflate: false});
-    await new Promise(resolve => wsNormal.once('open', resolve));
-    console.log('Acquiring targets...');
-    const targetList = await SEND(wsNormal, {
-    id: 1,
-    method: 'Target.getTargets',
-    });
-    // Ensure we are grabbing the right page here
-    await console.log('Attaching to page targets...');
-    const targetDetails = await SEND(wsNormal, {
-    id: 2,
-    method: 'Target.attachToTarget',
-    params: {
-        targetId: targetList.result.targetInfos[0].targetId, 
-        flatten: true
-    }
-    });
+  const wsNormal = new WebSocket(browser.wsEndpoint(), {perMessageDeflate: false});
+  await new Promise(resolve => wsNormal.once('open', resolve));
+  console.log('Acquiring targets...');
+  const targetList = await SEND(wsNormal, {
+  id: 1,
+  method: 'Target.getTargets',
+  });
+  // Ensure we are grabbing the right page here
+  await console.log('Attaching to page targets...');
+  const targetDetails = await SEND(wsNormal, {
+  id: 2,
+  method: 'Target.attachToTarget',
+  params: {
+      targetId: targetList.result.targetInfos[0].targetId, 
+      flatten: true
+  }
+  });
 
-    // Grab session ID
-    const sessionID = await targetDetails.result.sessionId;
-    await SEND(wsNormal, {
-    sessionId: sessionID,
-    id: 1, 
-    method: 'Page.navigate',
-    params: {
-        url: URL,
-    },
-    });
-    
-    await SEND(wsNormal, {
-    sessionId: sessionID,
-    id: 2, 
-    method: 'Performance.enable',
-    });
-    
-    const perfResults = (await SEND(wsNormal, {
-    sessionId: sessionID,
-    id: 3,
-    method: 'Performance.getMetrics',
-    })).result;
-    console.log('Performance metrics using DevTools Protocol');
-    console.log(perfResults);
+  // Grab session ID
+  const sessionID = await targetDetails.result.sessionId;
+  await SEND(wsNormal, {
+  sessionId: sessionID,
+  id: 1, 
+  method: 'Page.navigate',
+  params: {
+      url: URL,
+  },
+  });
+  
+  await SEND(wsNormal, {
+  sessionId: sessionID,
+  id: 2, 
+  method: 'Performance.enable',
+  });
+  
+  const perfResults = (await SEND(wsNormal, {
+  sessionId: sessionID,
+  id: 3,
+  method: 'Performance.getMetrics',
+  })).result;
+  console.log('Performance metrics using DevTools Protocol');
+  console.log(perfResults);
 }
 
 async function coreWebVitalsTest(page) {
 
-    await page.exposeFunction('print', (msg) => console.log(msg));
-    // do something with these expose functions such that if after all 3 have been updated, the timeout moves on, but defaults to 2 seconds otherwise
-    await page.exposeFunction('updateCLS', (metric) => {CLS = metric;console.log("updated value cls^");});
-    await page.exposeFunction('updateLCP', (metric) => {LCP = metric;console.log("updated value lcp^");});
-    await page.exposeFunction('updateTBT', (metric) => {TBT = metric;console.log("updated value tbt^");});
-        
-    await page.evaluate(() => {
-        //check for if observer has already been instatiated
-        
-        const observer = new PerformanceObserver((list) => {
-            var cls = 0;
-            let perfEntries = list.getEntries();
-            perfEntries.forEach((entry) => {
-                if (!entry.hadRecentInput) {
-                    cls += entry.value;
-                }
-            });
-            //let currEntry = perfEntries[perfEntries.length - 1];
-            //print(currEntry);
-            //console.log(cls) 
-            //print(cls);
-            updateCLS(cls);
-        });
-        observer.observe({type: "layout-shift", buffered: true});
-        //print("script ran for CLS");
-    });
-    await page.evaluate(() => {
-        const observer = new PerformanceObserver((list) => {
-            var tbt = 0;
-            let perfEntries = list.getEntries();
-            perfEntries.forEach((entry) => {
-                tbt += entry.duration - 50;
-            });
-            //print(tbt);
-            updateTBT(tbt);
-        });
-        observer.observe({type: "longtask", buffered: true});
-        //print("script ran for total blocking time");
-    });
-    await console.log("after TBT");
+  await page.exposeFunction('print', (msg) => console.log(msg));
+  // do something with these expose functions such that if after all 3 have been updated, the timeout moves on, but defaults to 2 seconds otherwise
+  await page.exposeFunction('updateCLS', (metric) => {CLS = metric;console.log("updated value cls^");});
+  await page.exposeFunction('updateLCP', (metric) => {LCP = metric;console.log("updated value lcp^");});
+  await page.exposeFunction('updateTBT', (metric) => {TBT = metric;console.log("updated value tbt^");});
+      
+  await page.evaluate(() => {
+      //check for if observer has already been instatiated
+      
+      const observer = new PerformanceObserver((list) => {
+          var cls = 0;
+          let perfEntries = list.getEntries();
+          perfEntries.forEach((entry) => {
+              if (!entry.hadRecentInput) {
+                  cls += entry.value;
+              }
+          });
+          //let currEntry = perfEntries[perfEntries.length - 1];
+          //print(currEntry);
+          //console.log(cls) 
+          //print(cls);
+          updateCLS(cls);
+      });
+      observer.observe({type: "layout-shift", buffered: true});
+      //print("script ran for CLS");
+  });
+  await page.evaluate(() => {
+      const observer = new PerformanceObserver((list) => {
+          var tbt = 0;
+          let perfEntries = list.getEntries();
+          perfEntries.forEach((entry) => {
+              tbt += entry.duration - 50;
+          });
+          //print(tbt);
+          updateTBT(tbt);
+      });
+      observer.observe({type: "longtask", buffered: true});
+      //print("script ran for total blocking time");
+  });
+  await console.log("after TBT");
 
-    await page.evaluate(() => {
-        const observer = new PerformanceObserver((list) => {
-            let perfEntries = list.getEntries();
-            let currEntry = perfEntries[perfEntries.length - 1];
-            console.log(currEntry);
-            //print(currEntry.startTime);
-            updateLCP(currEntry.startTime);
-        });
-        observer.observe({type: "largest-contentful-paint", buffered: true});
-        //print("script ran for NEW LCP");
-    });
+  await page.evaluate(() => {
+      const observer = new PerformanceObserver((list) => {
+          let perfEntries = list.getEntries();
+          let currEntry = perfEntries[perfEntries.length - 1];
+          console.log(currEntry);
+          //print(currEntry.startTime);
+          updateLCP(currEntry.startTime);
+      });
+      observer.observe({type: "largest-contentful-paint", buffered: true});
+      //print("script ran for NEW LCP");
+  });
 }
 
 /* async function trackResources(pid) {
-    try {
-        const statistics = await pidusage(pid);
-        console.log(statistics.cpu);
-    }
-    catch (e) {
-        console.log(e);
-    }
+  try {
+      const statistics = await pidusage(pid);
+      console.log(statistics.cpu);
+  }
+  catch (e) {
+      console.log(e);
+  }
 }
 
 setInterval(() => {
-    trackResources(pid);
+  trackResources(pid);
 }, 500) */
 
 
@@ -171,17 +161,17 @@ setInterval(() => {
 
 // Set up browsers with and without extension
 const browserExtension = await puppeteer.launch({
-  product: 'chrome',
-  headless: false,
-  args: [
-    `--disable-extensions-except=${pathToExtension}`,
-    `--load-extension=${pathToExtension}`,
-  ]
+product: 'chrome',
+headless: false,
+args: [
+  `--disable-extensions-except=${pathToExtension}`,
+  `--load-extension=${pathToExtension}`,
+]
 });
 
 const browserNormal = await puppeteer.launch({
-    produce: 'chrome',
-    headless: false
+  produce: 'chrome',
+  headless: false
 });
 
 //setting up websocket connection
@@ -208,3 +198,8 @@ await new Promise((resolve, reject) => setTimeout(resolve, 2000));
 await console.log(TBT);
 await console.log(CLS);
 await console.log(LCP);
+
+// a way to save the output file, test flag, a flag for output, 
+// when to close page
+// find extension that injects an input box
+// set up a git ignore file

@@ -2,24 +2,35 @@
 
 import { program } from "commander";
 import puppeteer from 'puppeteer';
-//const {puppeteer} = require('puppeteer');
 import path from 'path';
+import requestCLSMetrics from '../cls.js';
+import requestINPMetrics from '../inp.js';
+import requestTBTMetrics from '../tbt.js';
+import requestLCPMetrics from '../lcp.js';
+import wsConnection from '../socket.js';
 //import pidusage from 'pidusage';
 //import os from 'os';
-import WebSocket from 'ws';
-import SEND from "../SEND.js";
 
 let pathToExtension;
-let URL = "https://www.google.com";
-let CLS = 0;
-let LCP = 0;
-let TBT = 0;
+let URL;
+const normalMetricsDict = Object();
+normalMetricsDict.cls = 0;
+normalMetricsDict.lcp = 0;
+normalMetricsDict.inp = -1;
+normalMetricsDict.tbt = 0;
+
+const extensionMetricsDict = Object();
+extensionMetricsDict.cls = 0;
+extensionMetricsDict.lcp = 0;
+extensionMetricsDict.inp = -1;
+extensionMetricsDict.tbt = 0;
+
 
 program
   .version("1.0.0")
   .description("CLI for chromeextension development")
-  .option("-u, --url <type>", "add your testing URL")
-  .option("-e, --extension <type>", "Add your name")
+  .option("-u, --url <type>", "add your testing URL", "https://www.example.com")
+  .option("-e, --extension <type>", "Add your extension filepath")
   .option("-l, --no-lcp, ", "Deactivate LCP Metric")
   .option("-c, --no-cls", "Deactivate CLS Metric")
   .option("-i, --no-inp", "Deactivate INP Metric")
@@ -40,8 +51,75 @@ console.log(`Tracking LCP: ${options.lcp}`);
 console.log(`Tracking TBT: ${options.tbt}`);
 console.log(`Tracking INP: ${options.inp}`);
 
+pathToExtension = options.extension;
+URL = options.url;
 
-async function wsConnection(browser) {
+
+async function coreWebVitalsTest(page, dict) {
+
+  await page.exposeFunction('print', (msg) => console.log(msg));
+  if (options.cls) {
+    await requestCLSMetrics(page, dict);
+  }
+  if (options.inp) {
+    await requestINPMetrics(page, dict);
+  }
+  if (options.lcp) {
+    await requestLCPMetrics(page, dict);
+  }
+  if (options.tbt) {
+    await requestTBTMetrics(page, dict);
+  }
+}
+
+// Set up browsers with and without extension
+const browserExtension = await puppeteer.launch({
+product: 'chrome',
+headless: false,
+args: [
+  `--disable-extensions-except=${pathToExtension}`,
+  `--load-extension=${pathToExtension}`,
+]
+});
+
+const browserNormal = await puppeteer.launch({
+  produce: 'chrome',
+  headless: false
+});
+
+//setting up websocket connection
+if (options.resources) {
+  const normalResources = wsConnection(browserNormal);
+  const extensionResources = wsConnection(browserExtension);
+}
+
+const pageExtension = await browserExtension.newPage();
+const pageNormal = await browserNormal.newPage();
+
+await pageExtension.goto(URL);
+await coreWebVitalsTest(pageExtension, extensionMetricsDict);
+//replace this part with more of a streaming value (ie. when the value gets changed, we are updated)
+await new Promise((resolve) => setTimeout(resolve, 5000));
+console.log(`\nWeb Vital Metrics (Extension)`);
+console.log(`Cumulative Layout Shift (CLS): ${extensionMetricsDict.cls}`);
+console.log(`Largest Contentful Paint (LCP): ${extensionMetricsDict.lcp}`);
+console.log(`Interaction to Next Paint (INP): ${extensionMetricsDict.inp}`);
+console.log(`Total Blocking Time (TBT): ${extensionMetricsDict.tbt}`);
+console.log("\n------------------------\n");
+//await page.close();
+
+await pageNormal.goto(URL);
+await coreWebVitalsTest(pageNormal, normalMetricsDict);
+await new Promise((resolve) => setTimeout(resolve, 5000));
+console.log(`Web Vital Metrics (Normal)`);
+console.log(`Cumulative Layout Shift (CLS): ${normalMetricsDict.cls}`);
+console.log(`Largest Contentful Paint (LCP): ${normalMetricsDict.lcp}`);
+console.log(`Interaction to Next Paint (INP): ${normalMetricsDict.inp}`);
+console.log(`Total Blocking Time (TBT): ${normalMetricsDict.tbt}`);
+
+
+
+/* async function wsConnection(browser) {
   const wsNormal = new WebSocket(browser.wsEndpoint(), {perMessageDeflate: false});
   await new Promise(resolve => wsNormal.once('open', resolve));
   console.log('Acquiring targets...');
@@ -160,7 +238,7 @@ setInterval(() => {
 //let pathToExtension = "/Users/mahitnamburu/Desktop/webdrivertest/webextensions-selenium-example.crx"
 
 // Set up browsers with and without extension
-const browserExtension = await puppeteer.launch({
+/* const browserExtension = await puppeteer.launch({
 product: 'chrome',
 headless: false,
 args: [
@@ -197,9 +275,4 @@ await coreWebVitalsTest(pageNormal);
 await new Promise((resolve, reject) => setTimeout(resolve, 2000));
 await console.log(TBT);
 await console.log(CLS);
-await console.log(LCP);
-
-// a way to save the output file, test flag, a flag for output, 
-// when to close page
-// find extension that injects an input box
-// set up a git ignore file
+await console.log(LCP); */

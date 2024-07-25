@@ -43,7 +43,7 @@ async function wsConnection(browser) {
     method: 'Performance.getMetrics',
     })).result;
     console.log('Performance metrics using DevTools Protocol');
-    console.log(perfResults);
+    return perfResults;
 }
 
 export default wsConnection
