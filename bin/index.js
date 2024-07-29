@@ -3,11 +3,11 @@
 import { program } from "commander";
 import puppeteer from 'puppeteer';
 import path from 'path';
-import requestCLSMetrics from '../cls.js';
-import requestINPMetrics from '../inp.js';
+import requestCLSMetrics from '../library/features/cls.js';
+import requestINPMetrics from '../library/features/inp.js';
 import requestTBTMetrics from '../tbt.js';
-import requestLCPMetrics from '../lcp.js';
-import wsConnection from '../socket.js';
+import requestLCPMetrics from '../library/features/lcp.js';
+import wsConnection from '../library/features/socket.js';
 //import pidusage from 'pidusage';
 //import os from 'os';
 
@@ -101,10 +101,18 @@ await coreWebVitalsTest(pageExtension, extensionMetricsDict);
 //replace this part with more of a streaming value (ie. when the value gets changed, we are updated)
 await new Promise((resolve) => setTimeout(resolve, 5000));
 console.log(`\nWeb Vital Metrics (Extension)`);
-console.log(`Cumulative Layout Shift (CLS): ${extensionMetricsDict.cls}`);
-console.log(`Largest Contentful Paint (LCP): ${extensionMetricsDict.lcp}`);
-console.log(`Interaction to Next Paint (INP): ${extensionMetricsDict.inp}`);
-console.log(`Total Blocking Time (TBT): ${extensionMetricsDict.tbt}`);
+if (options.cls) {
+  console.log(`Cumulative Layout Shift (CLS): ${extensionMetricsDict.cls}`);
+}
+if (options.lcp) {
+  console.log(`Largest Contentful Paint (LCP): ${extensionMetricsDict.lcp}`);
+}
+if (options.inp) {
+  console.log(`Interaction to Next Paint (INP): ${extensionMetricsDict.inp}`);
+}
+if (options.tbt) {
+  console.log(`Total Blocking Time (TBT): ${extensionMetricsDict.tbt}`);
+}
 console.log("\n------------------------\n");
 //await page.close();
 
@@ -112,12 +120,18 @@ await pageNormal.goto(URL);
 await coreWebVitalsTest(pageNormal, normalMetricsDict);
 await new Promise((resolve) => setTimeout(resolve, 5000));
 console.log(`Web Vital Metrics (Normal)`);
-console.log(`Cumulative Layout Shift (CLS): ${normalMetricsDict.cls}`);
-console.log(`Largest Contentful Paint (LCP): ${normalMetricsDict.lcp}`);
-console.log(`Interaction to Next Paint (INP): ${normalMetricsDict.inp}`);
-console.log(`Total Blocking Time (TBT): ${normalMetricsDict.tbt}`);
-
-
+if (options.cls) {
+  console.log(`Cumulative Layout Shift (CLS): ${normalMetricsDict.cls}`);
+}
+if (options.lcp) {
+  console.log(`Largest Contentful Paint (LCP): ${normalMetricsDict.lcp}`);
+}
+if (options.inp) {
+  console.log(`Interaction to Next Paint (INP): ${normalMetricsDict.inp}`);
+}
+if (options.tbt) {
+  console.log(`Total Blocking Time (TBT): ${normalMetricsDict.tbt}`);
+}
 
 /* async function wsConnection(browser) {
   const wsNormal = new WebSocket(browser.wsEndpoint(), {perMessageDeflate: false});
@@ -276,3 +290,5 @@ await new Promise((resolve, reject) => setTimeout(resolve, 2000));
 await console.log(TBT);
 await console.log(CLS);
 await console.log(LCP); */
+
+// add a lib folder, testing folder, feature folder, readme, go through comprehensive testing

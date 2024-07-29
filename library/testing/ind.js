@@ -7,7 +7,7 @@ import path from 'path';
 //import pidusage from 'pidusage';
 //import os from 'os';
 import WebSocket from 'ws';
-import SEND from "../SEND.js";
+import SEND from "../library/features/SEND.js";
 
 let pathToExtension;
 let URL = "https://www.google.com";

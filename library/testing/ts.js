@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import puppeteer from 'puppeteer';
-import SEND from './SEND';
+import SEND from './library/features/SEND';
 
 function SEND(ws, command) {
     ws.send(JSON.stringify(command));
