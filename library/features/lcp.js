@@ -11,11 +11,9 @@ async function requestLCPMetrics(page, dict) {
             let perfEntries = list.getEntries();
             let currEntry = perfEntries[perfEntries.length - 1];
             console.log(currEntry);
-            //print(currEntry.startTime);
             updateLCP(currEntry.startTime);
         });
         observer.observe({type: "largest-contentful-paint", buffered: true});
-        //print("script ran for NEW LCP");
     });
 }
 

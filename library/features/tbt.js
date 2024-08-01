@@ -14,11 +14,9 @@ async function requestTBTMetrics(page, dict) {
             perfEntries.forEach((entry) => {
                 tbt += entry.duration - 50;
             });
-            //print(tbt);
             updateTBT(tbt);
         });
         observer.observe({type: "longtask", buffered: true});
-        //print("script ran for total blocking time");
     });
 }
 

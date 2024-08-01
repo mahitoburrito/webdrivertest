@@ -1,17 +1,17 @@
 {
   "type": "module",
   "dependencies": {
-    "commander": "^12.1.0",
-    "mocha": "^10.4.0",
-    "os": "^0.1.2",
-    "path": "^0.12.7",
-    "pidusage": "^3.0.2",
-    "plotly.js-dist": "^2.33.0",
-    "puppeteer": "^22.11.0",
-    "puppeteer-core": "^22.11.0",
-    "selenium-webdriver": "^4.21.0",
-    "web-vitals": "^4.0.0",
-    "ws": "^8.18.0"
+    "commander": "12.1.0",
+    "mocha": "10.4.0",
+    "os": "0.1.2",
+    "path": "0.12.7",
+    "pidusage": "3.0.2",
+    "plotly.js-dist": "2.33.0",
+    "puppeteer": "22.11.0",
+    "puppeteer-core": "22.11.0",
+    "selenium-webdriver": "4.21.0",
+    "web-vitals": "4.0.0",
+    "ws": "8.18.0"
   },
   "name": "extensionperf",
   "version": "1.0.0",

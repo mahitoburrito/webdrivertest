@@ -1,0 +1,1 @@
+(self.webpackChunk=self.webpackChunk||[]).push([[9704],{88008:(e,t,a)=>{a.r(t),a.d(t,{NewToneDetectedPopup:()=>p});var r=a(68665),o=a(59604);const p=()=>r.createElement("div",{className:o.wrapper,"data-grammarly-part":"newToneDetectedPopup"},"New tone detected! Hover over the Grammarly widget and click the emoji to check your tone.")},59604:e=>{e.exports={wrapper:"BFyE2"}}}]);
