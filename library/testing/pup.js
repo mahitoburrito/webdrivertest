@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer';
 import path from 'path';
 import requestCLSMetrics from '../features/cls.js';
 import requestINPMetrics from '../features/inp.js';
-import requestTBTMetrics from '../../tbt.js';
+import requestTBTMetrics from '../features/tbt.js';
 import requestLCPMetrics from '../features/lcp.js';
 import wsConnection from '../features/socket.js';
 //import pidusage from 'pidusage';
