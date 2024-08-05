@@ -5,7 +5,7 @@ async function requestINPMetrics(page, dict) {
         console.log("updated value inp^");
         dict.inp=metric
     });
-    
+
     await page.evaluate(() => {
         const observer = new PerformanceObserver((list) => {
             var inp = -1;

@@ -9,5 +9,4 @@ function SEND(ws, command) {
       });
     });
   }
-// 
 export default SEND

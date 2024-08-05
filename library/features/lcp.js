@@ -5,7 +5,7 @@ async function requestLCPMetrics(page, dict) {
         console.log("updated value lcp^");
         dict.lcp=metric;
     });
-    
+
     await page.evaluate(() => {
         const observer = new PerformanceObserver((list) => {
             let perfEntries = list.getEntries();

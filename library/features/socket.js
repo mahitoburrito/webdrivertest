@@ -10,7 +10,7 @@ async function wsConnection(browser) {
     method: 'Target.getTargets',
     });
     // Ensure we are grabbing the right page here
-    await console.log('Attaching to page targets...');
+    console.log('Attaching to page targets...');
     const targetDetails = await SEND(wsNormal, {
     id: 2,
     method: 'Target.attachToTarget',
@@ -36,7 +36,7 @@ async function wsConnection(browser) {
     id: 2, 
     method: 'Performance.enable',
     });
-    
+
     const perfResults = (await SEND(wsNormal, {
     sessionId: sessionID,
     id: 3,
