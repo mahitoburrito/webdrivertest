@@ -1,0 +1,6 @@
+2024/06/26-15:15:11.162 8407 Creating DB /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/IndexedDB/https_www.kdnuggets.com_0.indexeddb.leveldb since it was missing.
+2024/06/26-15:15:11.173 8407 Reusing MANIFEST /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/IndexedDB/https_www.kdnuggets.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/06/26-15:15:13.675 8903 Level-0 table #5: started
+2024/06/26-15:15:13.681 8903 Level-0 table #5: 385 bytes OK
+2024/06/26-15:15:13.687 8903 Delete type=0 #3
+2024/06/26-15:15:13.687 8903 Manual compaction at level-0 from (begin) .. (end); will stop at (end)

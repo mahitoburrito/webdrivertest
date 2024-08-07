@@ -1,0 +1,14 @@
+2024/07/30-09:21:05.914 a403 Reusing MANIFEST /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/IndexedDB/https_drive.google.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/07/30-09:21:05.915 a403 Recovering log #65
+2024/07/30-09:21:05.930 a403 Reusing old log /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/IndexedDB/https_drive.google.com_0.indexeddb.leveldb/000065.log 
+2024/07/30-09:21:17.890 a003 Level-0 table #71: started
+2024/07/30-09:21:17.898 a003 Level-0 table #71: 3005547 bytes OK
+2024/07/30-09:21:17.899 a003 Delete type=0 #65
+2024/07/30-09:23:54.549 a403 Compacting 1@1 + 2@2 files
+2024/07/30-09:23:54.570 a403 Generated table #72@1: 2382 keys, 2123561 bytes
+2024/07/30-09:23:54.583 a403 Generated table #73@1: 10314 keys, 1266685 bytes
+2024/07/30-09:23:54.583 a403 Compacted 1@1 + 2@2 files => 3390246 bytes
+2024/07/30-09:23:54.585 a403 compacted to: files[ 0 0 2 0 0 0 0 ]
+2024/07/30-09:23:54.585 a403 Delete type=2 #71
+2024/07/30-09:23:54.585 a403 Delete type=2 #67
+2024/07/30-09:23:54.585 a403 Delete type=2 #68

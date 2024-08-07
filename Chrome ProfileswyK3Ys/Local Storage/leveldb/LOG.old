@@ -1,0 +1,18 @@
+2024/07/29-13:29:05.680 2c03 Reusing MANIFEST /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/Local Storage/leveldb/MANIFEST-000001
+2024/07/29-13:29:05.682 2c03 Recovering log #214
+2024/07/29-13:29:05.684 2c03 Reusing old log /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/Local Storage/leveldb/000214.log 
+2024/07/29-22:06:22.758 2c03 Level-0 table #218: started
+2024/07/29-22:06:22.764 2c03 Level-0 table #218: 18237 bytes OK
+2024/07/29-22:06:22.768 2c03 Delete type=0 #214
+2024/07/30-16:42:24.937 3a03 Level-0 table #220: started
+2024/07/30-16:42:24.942 3a03 Level-0 table #220: 11899 bytes OK
+2024/07/30-16:42:24.945 3a03 Delete type=0 #217
+2024/07/30-16:42:24.951 3a03 Compacting 4@0 + 1@1 files
+2024/07/30-16:42:24.972 3a03 Generated table #221@0: 886 keys, 1313179 bytes
+2024/07/30-16:42:24.972 3a03 Compacted 4@0 + 1@1 files => 1313179 bytes
+2024/07/30-16:42:24.973 3a03 compacted to: files[ 0 1 0 0 0 0 0 ]
+2024/07/30-16:42:24.974 3a03 Delete type=2 #215
+2024/07/30-16:42:24.974 3a03 Delete type=2 #210
+2024/07/30-16:42:24.974 3a03 Delete type=2 #212
+2024/07/30-16:42:24.974 3a03 Delete type=2 #220
+2024/07/30-16:42:24.974 3a03 Delete type=2 #218

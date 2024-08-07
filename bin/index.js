@@ -8,11 +8,13 @@ import requestTBTMetrics from '../library/features/tbt.js';
 import requestLCPMetrics from '../library/features/lcp.js';
 import wsConnection from '../library/features/socket.js';
 import report from '../library/features/report.js';
-import packageJson from '../package.json' assert {type: "json"};
+import packageJson from '../package.json' assert {type: "json"}; //change assert to with & update node
 import fs from 'fs';
 
 let pathToExtension;
 let testingURL;
+let profile_dir_extension = "";
+let profile_dir_normal = "";
 const normalMetricsDict = {
   cls: 0,
   lcp: 0,
@@ -42,14 +44,15 @@ const metricToPrint = {
 program
   .version(packageJson.version)
   .description("A CLI (Command Line Interface) that lets you test the performance effect on a webpage based by a specified extension. Performance discrepancies are tracked mainly by Core Web Vitals and other relevant metrics (use -h to see all options).") // include a more detailed description on what this does in terms of tracking web performance , etc.
-  .requiredOption("-u, --url <type>", "Add your testing URL") // require url and extension
+  .requiredOption("-u, --url <type>", "Add your testing URL") // require url and extension // handle when url is not valid URL.parsewors
   .requiredOption("-e, --extension <type>", "Add your extension filepath")
-  .option("-l, --lcp", "Deactivate LCP Metric", false)
-  .option("-c, --cls", "Deactivate CLS Metric", false)
-  .option("-i, --inp", "Deactivate INP Metric", false)
-  .option("-t, --tbt", "Deactivate TBT Metric", false)
+  .option("-o, --extension-only", "Only test Chrome with the extension")
+  .option("-l, --lcp", "Activate LCP Metric", false)
+  .option("-c, --cls", "Activate CLS Metric", false)
+  .option("-i, --inp", "Activate INP Metric", false)
+  .option("-t, --tbt", "Activate TBT Metric", false)
   .option("-a, --all-metrics", "Activate all metric tracking", false)
-  .option("-r, --resources", "Deactivate resource (Memory & CPU Consumption) tracking", false) //specify what resources is
+  .option("-r, --resources", "Activate resource (Memory & CPU Consumption) tracking", false) //specify what resources is
   .option("-p, --profile <type>", "Configure custom Chrome Profile")
   .addHelpText('after', `
     
@@ -90,6 +93,15 @@ if (fs.existsSync(options.extension)) {
   console.log("This is not a valid path.")
 } 
 
+if (options.profile != undefined && fs.existsSync(options.profile)) {
+  console.log("got here");
+  profile_dir_extension = fs.mkdtempSync('Chrome Profiles');
+  fs.cpSync(options.profile, profile_dir_extension, {recursive: true});
+  profile_dir_normal  = fs.mkdtempSync('Chrome Profiles');
+  fs.cpSync(options.profile, profile_dir_normal, {recursive: true});
+  // look at the profile directory, grab the filepaths of both profiles, set as extension profile, and normal profile
+}
+
 //existing global, dont use that name
 testingURL = options.url;
 
@@ -98,25 +110,11 @@ async function coreWebVitalsTest(page, dict) {
 
   await page.exposeFunction('print', (msg) => console.log(msg));
   //iterate through the options rather than hardcoding the functions
-  //console.log(metricToFunction[text](page, dict));
   for (let key in options) {
     if (metricToFunction[key] != undefined && options[key] == true) {
       await metricToFunction[key](page, dict);
     }
   }
-  /* if (options.cls) {
-    await requestCLSMetrics(page, dict);
-  }
-  if (options.inp) {
-    await requestINPMetrics(page, dict);
-  }
-  if (options.lcp) {
-    await requestLCPMetrics(page, dict);
-  }
-  if (options.tbt) {
-    await requestTBTMetrics(page, dict);
-  }
-    */
 }
 
 // Set up browsers with and without extension
@@ -127,31 +125,48 @@ headless: false,
 args: [
   `--disable-extensions-except=${pathToExtension}`,
   `--load-extension=${pathToExtension}`,
-  `--user-data-dir=/Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1`
+  `--user-data-dir=${profile_dir_extension}`
 ]
 });
 
-const browserNormal = await puppeteer.launch({
-  produce: 'chrome',
-  headless: false,
-  args: [
-    `--user-data-dir=/Users/mahitnamburu/Library/Application Support/Google/Chrome/Default`
-  ]
-});
+if (!options.extensionOnly) {
+  const browserNormal = await puppeteer.launch({
+    produce: 'chrome',
+    headless: false,
+    args: [
+      `--user-data-dir=${profile_dir_normal}`
+    ]
+  });
+  browserNormal.on('disconnected', () => {browserExtension.close();}); 
+  browserExtension.on('disconnected', () => {browserNormal.close();});
+  const pageNormal = await browserNormal.newPage();
+  pageNormal.on('framenavigated', (frame) => {console.log(frame)});
+  await pageNormal.goto(testingURL);
+  //pageNormal.on('framenavigated', (frame) => pageExtension.goto(frame))
+  await coreWebVitalsTest(pageNormal, normalMetricsDict);
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+  console.log(`\nWeb Vital Metrics (Normal)`);
 
-browserExtension.on('disconnected', () => {browserNormal.close();})
-browserNormal.on('disconnected', () => {browserExtension.close();})
+  for (let key in options) {
+    if (metricToPrint[key] != undefined && options[key] == true) {
+      console.log(`${metricToPrint[key]}${normalMetricsDict[key]}`)
+    }
+  }
+  if (options.resources) {
+    const normalResources = wsConnection(browserNormal);
+  }
+
+}
+
 
 //setting up websocket connection
 if (options.resources) {
-  const normalResources = wsConnection(browserNormal);
   const extensionResources = wsConnection(browserExtension);
 }
 
 //have a flag to match navigations on both browsers, maybe track everything?
 //add a splitscreen between the two
 const pageExtension = await browserExtension.newPage();
-const pageNormal = await browserNormal.newPage();
 
 await pageExtension.goto(testingURL);
 await coreWebVitalsTest(pageExtension, extensionMetricsDict);
@@ -159,6 +174,7 @@ await coreWebVitalsTest(pageExtension, extensionMetricsDict);
 await new Promise((resolve) => setTimeout(resolve, 5000));
 
 //dont hard code, include final report, create some sort of mapping between the flags and the metrics
+console.log("\n------------------------");
 console.log(`\nWeb Vital Metrics (Extension)`);
 
 for (let key in options) {
@@ -166,25 +182,16 @@ for (let key in options) {
     console.log(`${metricToPrint[key]}${extensionMetricsDict[key]}`)
   }
 }
-console.log("\n------------------------\n");
 //await page.close();
 
-await pageNormal.goto(testingURL);
-await coreWebVitalsTest(pageNormal, normalMetricsDict);
-await new Promise((resolve) => setTimeout(resolve, 5000));
-console.log(`Web Vital Metrics (Normal)`);
-
-for (let key in options) {
-  if (metricToPrint[key] != undefined && options[key] == true) {
-    console.log(`${metricToPrint[key]}${normalMetricsDict[key]}`)
-  }
-}
 
 //print when theres a update or when we quit the program, on Process..onBeforeExit
 
 //hook onto document.onload and then begin running the script
 //look into queuemicrotask
-
+//sig int
+process.on('SIGINT', () => {
+  console.log('Process beforeExit event with code: ')});
 process.on('beforeExit', (code) => {
   console.log('Process beforeExit event with code: ', code);
 });
@@ -209,3 +216,7 @@ process.on('beforeExit', (code) => {
 // I would want to have an example chrome profile already downloaded so I dont need to log in
 // For some reason only certain profiles are able to log in
 // I'd wanna make sure that the metric values are streamed everytime they update (shouldn't be too hard)
+
+//issues --> cannot get the process.on('BeforeExit) or the Chrome profiles to load
+//navigation listener in the puppeteer docs
+//clone the profile before we pass it in, always create 2 for both //fs.cpSync(src, dest, {recursive: true}); //fs.makedtemp

@@ -1,0 +1,15 @@
+2024/07/11-20:06:16.911 8603 Reusing MANIFEST /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/IndexedDB/https_machinelearningmastery.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/07/11-20:06:16.912 8603 Recovering log #4
+2024/07/11-20:06:16.912 8603 Reusing old log /Users/mahitnamburu/Library/Application Support/Google/Chrome/Profile 1/IndexedDB/https_machinelearningmastery.com_0.indexeddb.leveldb/000004.log 
+2024/07/11-20:06:27.681 8603 Level-0 table #8: started
+2024/07/11-20:06:27.685 8603 Level-0 table #8: 209 bytes OK
+2024/07/11-20:06:27.691 8603 Delete type=0 #4
+2024/07/11-20:06:27.691 8603 Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2024/07/11-20:06:27.691 8603 Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x00\x00\x00\x06' @ 12 : 1
+2024/07/11-20:06:27.691 8603 Compacting 1@1 + 1@2 files
+2024/07/11-20:06:27.694 8603 Generated table #9@1: 9 keys, 391 bytes
+2024/07/11-20:06:27.694 8603 Compacted 1@1 + 1@2 files => 391 bytes
+2024/07/11-20:06:27.696 8603 compacted to: files[ 0 0 1 0 0 0 0 ]
+2024/07/11-20:06:27.696 8603 Delete type=2 #5
+2024/07/11-20:06:27.696 8603 Delete type=2 #8
+2024/07/11-20:06:27.696 8603 Manual compaction at level-1 from '\x00\x00\x00\x00\x06' @ 12 : 1 .. (end); will stop at (end)
