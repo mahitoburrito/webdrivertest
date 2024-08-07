@@ -137,6 +137,10 @@ if (!options.extensionOnly) {
       `--user-data-dir=${profile_dir_normal}`
     ]
   });
+  fs.rm(profile_dir_extension, {recursive: true});
+  fs.rm(profile_dir_normal, {recursive: true});
+  
+
   browserNormal.on('disconnected', () => {browserExtension.close();}); 
   browserExtension.on('disconnected', () => {browserNormal.close();});
   const pageNormal = await browserNormal.newPage();
