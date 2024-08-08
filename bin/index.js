@@ -8,6 +8,7 @@ import requestTBTMetrics from '../library/features/tbt.js';
 import requestLCPMetrics from '../library/features/lcp.js';
 import wsConnection from '../library/features/socket.js';
 import report from '../library/features/report.js';
+import exit from "../library/features/exit.js";
 import packageJson from '../package.json' assert {type: "json"}; //change assert to with & update node
 import fs from 'fs';
 
@@ -97,7 +98,7 @@ if (options.profile != undefined && fs.existsSync(options.profile)) {
   console.log("got here");
   profile_dir_extension = fs.mkdtempSync('Chrome Profiles');
   fs.cpSync(options.profile, profile_dir_extension, {recursive: true});
-  profile_dir_normal  = fs.mkdtempSync('Chrome Profiles');
+  profile_dir_normal = fs.mkdtempSync('Chrome Profiles');
   fs.cpSync(options.profile, profile_dir_normal, {recursive: true});
   // look at the profile directory, grab the filepaths of both profiles, set as extension profile, and normal profile
 }
@@ -129,6 +130,9 @@ args: [
 ]
 });
 
+const pageExtension = await browserExtension.newPage();
+await pageExtension.goto(testingURL);
+
 if (!options.extensionOnly) {
   const browserNormal = await puppeteer.launch({
     produce: 'chrome',
@@ -137,18 +141,21 @@ if (!options.extensionOnly) {
       `--user-data-dir=${profile_dir_normal}`
     ]
   });
-  fs.rm(profile_dir_extension, {recursive: true});
-  fs.rm(profile_dir_normal, {recursive: true});
-  
+  //fs.rm(profile_dir_extension, {recursive: true});
+  //fs.rm(profile_dir_normal, {recursive: true});
+  //fs.rmSync(profile_dir_extension, {recursive: true});
+  //fs.rmSync(profile_dir_normal, {recursive: true});
+  //console.log("removed directory");
 
   browserNormal.on('disconnected', () => {browserExtension.close();}); 
   browserExtension.on('disconnected', () => {browserNormal.close();});
+  
   const pageNormal = await browserNormal.newPage();
-  pageNormal.on('framenavigated', (frame) => {console.log(frame)});
+  //pageNormal.on('framenavigated', (frame) => {console.log(frame)});
   await pageNormal.goto(testingURL);
   //pageNormal.on('framenavigated', (frame) => pageExtension.goto(frame))
   await coreWebVitalsTest(pageNormal, normalMetricsDict);
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  //await new Promise((resolve) => setTimeout(resolve, 5000));
   console.log(`\nWeb Vital Metrics (Normal)`);
 
   for (let key in options) {
@@ -156,12 +163,12 @@ if (!options.extensionOnly) {
       console.log(`${metricToPrint[key]}${normalMetricsDict[key]}`)
     }
   }
+
   if (options.resources) {
     const normalResources = wsConnection(browserNormal);
   }
 
 }
-
 
 //setting up websocket connection
 if (options.resources) {
@@ -170,12 +177,9 @@ if (options.resources) {
 
 //have a flag to match navigations on both browsers, maybe track everything?
 //add a splitscreen between the two
-const pageExtension = await browserExtension.newPage();
-
-await pageExtension.goto(testingURL);
 await coreWebVitalsTest(pageExtension, extensionMetricsDict);
 //replace this part with more of a streaming value (ie. when the value gets changed, we are updated)
-await new Promise((resolve) => setTimeout(resolve, 5000));
+//await new Promise((resolve) => setTimeout(resolve, 5000));
 
 //dont hard code, include final report, create some sort of mapping between the flags and the metrics
 console.log("\n------------------------");
@@ -194,10 +198,10 @@ for (let key in options) {
 //hook onto document.onload and then begin running the script
 //look into queuemicrotask
 //sig int
-process.on('SIGINT', () => {
-  console.log('Process beforeExit event with code: ')});
-process.on('beforeExit', (code) => {
-  console.log('Process beforeExit event with code: ', code);
+
+process.on('SIGINT', (code) => {console.log("exiting through ctrl c"); console.log(code); process.exit()});
+process.on('beforeExit', () => {
+  exit(normalMetricsDict, extensionMetricsDict, metricToPrint, options);
 });
 
 //optionally add a chrome profile as a flag
