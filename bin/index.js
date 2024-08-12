@@ -55,6 +55,7 @@ program
   .option("-a, --all-metrics", "Activate all metric tracking", false)
   .option("-r, --resources", "Activate resource (Memory & CPU Consumption) tracking", false) //specify what resources is
   .option("-p, --profile <type>", "Configure custom Chrome Profile")
+  .option("-n, --num-runs <number>", "Configure how many tests are to be done", 1)
   .addHelpText('after', `
     
     Example usage (all available metrics are tracked):
@@ -207,9 +208,9 @@ process.on('beforeExit', () => {
 //optionally add a chrome profile as a flag
 //have a way to just launch the extension version (another flag)
 //show a way to tell people that the program to close the program as a first run, and include in readme
-//come up with some sort of metric that you are testing to give a warning/error if the metrics are above some values
+//come up with some sort of metric that you are testing to give a warning/error if the metrics are above some values TOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITY
 //if difference is above something
-//add in a way to test multiple runs
+//add in a way to test multiple runs TOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITY
 //pass an extension ID and then install that extension from a policy file
 //create a policy to download those extensions by default
 //look into the policy extension-settings https://chromeenterprise.google/policies/?policy=ExtensionSettings
