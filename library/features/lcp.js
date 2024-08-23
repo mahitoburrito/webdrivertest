@@ -1,8 +1,8 @@
-async function requestLCPMetrics(page, dict) {
+async function requestLCPMetrics(page, dict, type) {
     var LCP = 0;
     await page.exposeFunction('updateLCP', (metric) => {
         LCP = metric;
-        console.log("updated value lcp^");
+        console.log(`Updated ${type} LCP Value: ${metric}`);
         dict.lcp=metric;
     });
 

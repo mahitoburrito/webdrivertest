@@ -1,12 +1,12 @@
-async function requestCLSMetrics(page, dict) {
+async function requestCLSMetrics(page, dic, type) {
     var CLS = 0;
     var updateComplete = false;
 
     await page.exposeFunction('updateCLS', (metric) => {
         CLS = metric;
-        console.log("updated value cls^");
-        updateComplete=true;
-        dict.cls=metric;
+        console.log(`Updated ${type} CLS Value: ${metric}`);
+        updateComplete = true;
+        dict.cls = metric;
     });
 
     await page.evaluate(() => {

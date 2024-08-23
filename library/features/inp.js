@@ -1,8 +1,8 @@
-async function requestINPMetrics(page, dict) {
+async function requestINPMetrics(page, dict, type) {
     var INP = 0;
     await page.exposeFunction('updateINP', (metric) => {
         INP = metric;
-        console.log("updated value inp^");
+        console.log(`Updated ${type} INP Value: ${metric}`);
         dict.inp=metric
     });
 

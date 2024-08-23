@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+// Necessary imports
 import { program } from "commander";
 import puppeteer from 'puppeteer';
 import requestCLSMetrics from '../library/features/cls.js';
@@ -11,6 +12,8 @@ import report from '../library/features/report.js';
 import exit from "../library/features/exit.js";
 import packageJson from '../package.json' assert {type: "json"}; //change assert to with & update node
 import fs from 'fs';
+import os from "os";
+import path from "path";
 
 let pathToExtension;
 let testingURL;
@@ -41,13 +44,18 @@ const metricToPrint = {
   'inp': "Interaction to Next Paint (INP): ",
   'tbt': "Total Blocking Time (TBT): "
 }
+let currPageNormalURL;
+let currPageExtensionURL;
+let extension_args = [];
+let normal_args = [];
 
+// Establishing basic CLI functionality with Commander
 program
   .version(packageJson.version)
   .description("A CLI (Command Line Interface) that lets you test the performance effect on a webpage based by a specified extension. Performance discrepancies are tracked mainly by Core Web Vitals and other relevant metrics (use -h to see all options).") // include a more detailed description on what this does in terms of tracking web performance , etc.
   .requiredOption("-u, --url <type>", "Add your testing URL") // require url and extension // handle when url is not valid URL.parsewors
   .requiredOption("-e, --extension <type>", "Add your extension filepath")
-  .option("-o, --extension-only", "Only test Chrome with the extension")
+  .option("-o, --extension-only", "Only test Chrome with the extension", false)
   .option("-l, --lcp", "Activate LCP Metric", false)
   .option("-c, --cls", "Activate CLS Metric", false)
   .option("-i, --inp", "Activate INP Metric", false)
@@ -70,24 +78,25 @@ program
       options.resources = true;
     }
   });
-// have an example command and have some sort of help from commander describing what you can do etc. Examples should be in readme
-// have a -a for all performances
-// have more comments in the code
-//make multiple tests possible
+
+// Clean exit (final report) when CTRL+C is pressed
+process.on('SIGINT', (code) => {
+  exit(normalMetricsDict, extensionMetricsDict, metricToPrint, options);
+});
+
+// Parse and store the arguments passed in
 program.parse(process.argv);
-
 const options = program.opts();
-console.log(options);
 
-//prints a report rather than having here (another folder, just pass options)
+// Brief report on options selected by user
 report(options);
 
-//validate that pathToExtension actually exists (fi.stat)
-//try to load an non-extension see what happens, and handle it
-//make this into another file?
+// Check if extension path exists and is a directory
 if (fs.existsSync(options.extension)) {
   if (fs.lstatSync(options.extension).isDirectory()) {
     pathToExtension = options.extension;
+    extension_args.push(`--disable-extensions-except=${pathToExtension}`);
+    extension_args.push(`--load-extension=${pathToExtension}`);
   } else {
     console.log("This is not a valid directory. You may have to download this extension as a .zip and extract the extension directory.");
   }
@@ -95,19 +104,22 @@ if (fs.existsSync(options.extension)) {
   console.log("This is not a valid path.")
 } 
 
+// Check if profile path (if specified) exists
 if (options.profile != undefined && fs.existsSync(options.profile)) {
-  console.log("got here");
-  profile_dir_extension = fs.mkdtempSync('Chrome Profiles');
+  // Create 2 temp directories for Chrome profile
+  let tempDir = `${os.tmpdir()}${path.sep}Chrome Profiles`;
+  profile_dir_extension = fs.mkdtempSync(tempDir);
   fs.cpSync(options.profile, profile_dir_extension, {recursive: true});
-  profile_dir_normal = fs.mkdtempSync('Chrome Profiles');
+  profile_dir_normal = fs.mkdtempSync(tempDir);
   fs.cpSync(options.profile, profile_dir_normal, {recursive: true});
-  // look at the profile directory, grab the filepaths of both profiles, set as extension profile, and normal profile
+  extension_args.push(`--user-data-dir=${profile_dir_extension}`);
+  normal_args.push(`--user-data-dir=${profile_dir_normal}`);
 }
 
-//existing global, dont use that name
+// Store URL to be tested
 testingURL = options.url;
 
-
+// Function to handle testing of each indicated metric
 async function coreWebVitalsTest(page, dict) {
 
   await page.exposeFunction('print', (msg) => console.log(msg));
@@ -120,43 +132,53 @@ async function coreWebVitalsTest(page, dict) {
 }
 
 // Set up browsers with and without extension
-//add a listener that listens for the page to crash or quit and quit each one, have some kind of final report
 const browserExtension = await puppeteer.launch({
 product: 'chrome',
 headless: false,
-args: [
-  `--disable-extensions-except=${pathToExtension}`,
-  `--load-extension=${pathToExtension}`,
-  `--user-data-dir=${profile_dir_extension}`
-]
+args: extension_args
 });
 
+// Go to specified URL
 const pageExtension = await browserExtension.newPage();
 await pageExtension.goto(testingURL);
+currPageExtensionURL = testingURL;
 
 if (!options.extensionOnly) {
   const browserNormal = await puppeteer.launch({
     produce: 'chrome',
     headless: false,
-    args: [
-      `--user-data-dir=${profile_dir_normal}`
-    ]
+    args: normal_args
   });
-  //fs.rm(profile_dir_extension, {recursive: true});
-  //fs.rm(profile_dir_normal, {recursive: true});
-  //fs.rmSync(profile_dir_extension, {recursive: true});
-  //fs.rmSync(profile_dir_normal, {recursive: true});
-  //console.log("removed directory");
 
+  // Ensures both browsers close when either one gets disconnected
   browserNormal.on('disconnected', () => {browserExtension.close();}); 
   browserExtension.on('disconnected', () => {browserNormal.close();});
   
   const pageNormal = await browserNormal.newPage();
-  //pageNormal.on('framenavigated', (frame) => {console.log(frame)});
   await pageNormal.goto(testingURL);
-  //pageNormal.on('framenavigated', (frame) => pageExtension.goto(frame))
+  currPageNormalURL = testingURL;
+
+  // Matching navigations on both testing pages
+  pageNormal.on('framenavigated', (frame) => {
+    if (pageNormal.url() != currPageNormalURL) {
+      currPageNormalURL = pageNormal.url();
+      currPageExtensionURL = currPageNormalURL;
+      pageExtension.goto(currPageNormalURL);
+    }
+  });
+
+  pageExtension.on('framenavigated', (frame) => {
+    if (pageExtension.url() != currPageExtensionURL) {
+      currPageExtensionURL = pageExtension.url();
+      currPageNormalURL = currPageExtensionURL;
+      pageNormal.goto(currPageExtensionURL);
+    }
+  });
+
+  // Responsible for running tests on web pages
   await coreWebVitalsTest(pageNormal, normalMetricsDict);
-  //await new Promise((resolve) => setTimeout(resolve, 5000));
+
+  // Report normal metrics
   console.log(`\nWeb Vital Metrics (Normal)`);
 
   for (let key in options) {
@@ -165,24 +187,21 @@ if (!options.extensionOnly) {
     }
   }
 
+  // Track resources used (normal)
   if (options.resources) {
     const normalResources = wsConnection(browserNormal);
   }
 
 }
 
-//setting up websocket connection
+// Track resources used (extension)
 if (options.resources) {
   const extensionResources = wsConnection(browserExtension);
 }
 
-//have a flag to match navigations on both browsers, maybe track everything?
-//add a splitscreen between the two
 await coreWebVitalsTest(pageExtension, extensionMetricsDict);
-//replace this part with more of a streaming value (ie. when the value gets changed, we are updated)
-//await new Promise((resolve) => setTimeout(resolve, 5000));
 
-//dont hard code, include final report, create some sort of mapping between the flags and the metrics
+// Report extension metrics
 console.log("\n------------------------");
 console.log(`\nWeb Vital Metrics (Extension)`);
 
@@ -191,41 +210,8 @@ for (let key in options) {
     console.log(`${metricToPrint[key]}${extensionMetricsDict[key]}`)
   }
 }
-//await page.close();
 
-
-//print when theres a update or when we quit the program, on Process..onBeforeExit
-
-//hook onto document.onload and then begin running the script
-//look into queuemicrotask
-//sig int
-
-process.on('SIGINT', (code) => {console.log("exiting through ctrl c"); console.log(code); process.exit()});
+// Provides a final report before user exits
 process.on('beforeExit', () => {
   exit(normalMetricsDict, extensionMetricsDict, metricToPrint, options);
 });
-
-//optionally add a chrome profile as a flag
-//have a way to just launch the extension version (another flag)
-//show a way to tell people that the program to close the program as a first run, and include in readme
-//come up with some sort of metric that you are testing to give a warning/error if the metrics are above some values TOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITY
-//if difference is above something
-//add in a way to test multiple runs TOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITYTOP PRIORITY
-//pass an extension ID and then install that extension from a policy file
-//create a policy to download those extensions by default
-//look into the policy extension-settings https://chromeenterprise.google/policies/?policy=ExtensionSettings
-//https://support.google.com/chrome/a/answer/9867568?hl=en
-//https://github.com/GoogleChromeLabs/extension-update-testing-tool have a little wrapper function that takes the user input and outputs to a temporary file that is the policy file, and load that in
-// test to see if profile loading works, then hard code a profile and load it in, then create temp file
-// support local extension or an id
-
-
-//drop node_modules folder, git ignore file (node_modules, package_lock)
-// pretend you are a PM for grammarly, install a tool for a google doc, 
-// I would want to have an example chrome profile already downloaded so I dont need to log in
-// For some reason only certain profiles are able to log in
-// I'd wanna make sure that the metric values are streamed everytime they update (shouldn't be too hard)
-
-//issues --> cannot get the process.on('BeforeExit) or the Chrome profiles to load
-//navigation listener in the puppeteer docs
-//clone the profile before we pass it in, always create 2 for both //fs.cpSync(src, dest, {recursive: true}); //fs.makedtemp

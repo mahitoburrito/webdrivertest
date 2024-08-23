@@ -1,9 +1,9 @@
-async function requestTBTMetrics(page, dict) {
+async function requestTBTMetrics(page, dict, type) {
     var TBT = 0;
 
     await page.exposeFunction('updateTBT', (metric) => {
         TBT = metric;
-        console.log("updated value tbt^");
+        console.log(`Updated ${type} TBT Value: ${metric}`);
         dict.tbt=metric;
     });
 
